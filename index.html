@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Client</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Chat Client</h1>
+        <div class="chat-window">
+            <ul id="messagesList"></ul>
+        </div>
+        <form id="chatForm">
+            <input type="text" id="messageInput" placeholder="Enter your message" required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <ul id="messagesList"></ul>
+
+    <script>
+        // Create WebSocket connection
+        const ws = new WebSocket('ws://localhost:3000');
+
+        // Connection opened
+        ws.addEventListener('open', (event) => {
+            console.log('Connected to the WebSocket server');
+        });
+
+        // Listen for messages
+        ws.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+            addMessageToList(data.message);
+        });
+
+        document.getElementById('chatForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const message = document.getElementById('messageInput').value;
+
+            fetch('http://localhost:3000/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            }).then(response => response.json())
+              .then(data => {
+                  console.log(data);
+                  document.getElementById('messageInput').value = '';
+              }).catch(error => console.error('Error:', error));
+        });
+
+        function loadMessages() {
+            fetch('http://localhost:3000/messages')
+                .then(response => response.json())
+                .then(messages => {
+                    const messagesList = document.getElementById('messagesList');
+                    messagesList.innerHTML = '';
+                    messages.forEach(message => {
+                        addMessageToList(message);
+                    });
+                }).catch(error => console.error('Error:', error));
+        }
+
+        function addMessageToList(message) {
+            const messagesList = document.getElementById('messagesList');
+            const li = document.createElement('li');
+            li.textContent = message;
+            messagesList.appendChild(li);
+        }
+
+        loadMessages();
+    </script>
+</body>
+</html>
